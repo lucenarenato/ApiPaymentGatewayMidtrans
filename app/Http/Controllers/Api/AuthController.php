@@ -16,25 +16,25 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $data = $request->all();
-        
+
         $validator = Validator::make($data, [
             'name' => 'required|string',
             'email' => 'required|email',
             'password' => 'required|string|min:6',
             'pin' => 'required|digits:6'
         ]);
-        
+
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->messages()], 400);
         }
 
         $user = User::where('email', $request->email)->exists();
-        
+
         if ($user) {
             return response()->json(['message' => 'Email already taken'], 409);
         }
-        
-        
+
+
         DB::beginTransaction();
 
         try {
@@ -80,13 +80,12 @@ class AuthController extends Controller
         } catch (\Throwable $th) {
             DB::rollback();
             return response()->json(['message' => $th->getMessage()], 500);
-        }      
-            
+        }
+
 
     }
 
-    public function login(Request $request)
-    {
+    public function login(Request $request) {
         $credentials = $request->only('email', 'password');
 
         $validator = Validator::make($credentials, [
@@ -99,9 +98,7 @@ class AuthController extends Controller
         }
 
         try {
-            $token = JWTAuth::attempt($credentials);
-            
-            if (!$token) {
+            if (!$token = JWTAuth::attempt($credentials)) {
                 return response()->json(['message' => 'Login credentials are invalid'], 400);
             }
 
@@ -115,7 +112,6 @@ class AuthController extends Controller
         } catch (JWTException $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
- 	
     }
 
     private function generateCardNumber($length)

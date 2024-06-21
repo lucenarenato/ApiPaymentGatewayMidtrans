@@ -28,19 +28,27 @@ function uploadBase64Image($base64Image) {
 }
 
 function getUser($param) {
-    $user = User::where('id', $param)
-                    ->orWhere('email', $param)
+    // Determina se o parâmetro é um número (ID)
+    if (is_numeric($param)) {
+        $user = User::where('id', $param)->first();
+    } else {
+        // Caso contrário, considera como e-mail ou nome de usuário
+        $user = User::where('email', $param)
                     ->orWhere('username', $param)
                     ->first();
-        
-    $wallet = Wallet::where('user_id', $user->id)->first();
-    $user->profile_picture = $user->profile_picture ? 
-        url('storage/'.$user->profile_picture) : "";
-    $user->ktp = $user->ktp ? 
-        url('storage/'.$user->ktp) : "";
-    $user->balance = $wallet->balance;
-    $user->card_number = $wallet->card_number;
-    $user->pin = $wallet->pin;
+    }
+
+    // Verifica se o usuário foi encontrado
+    if ($user) {
+        $wallet = Wallet::where('user_id', $user->id)->first();
+
+        // Adiciona os detalhes do perfil do usuário
+        $user->profile_picture = $user->profile_picture ? url('storage/' . $user->profile_picture) : "";
+        $user->ktp = $user->ktp ? url('storage/' . $user->ktp) : "";
+        $user->balance = $wallet ? $wallet->balance : 0;
+        $user->card_number = $wallet ? $wallet->card_number : '';
+        $user->pin = $wallet ? $wallet->pin : '';
+    }
 
     return $user;
 }
